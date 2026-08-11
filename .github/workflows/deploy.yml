@@ -1,0 +1,71 @@
+name: Deploy controller
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=384
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: Package release
+        run: |
+          mkdir -p release
+          rsync -a \
+            --exclude '.venv' \
+            --exclude 'node_modules' \
+            --exclude '.git' \
+            --exclude 'backend/data/pids' \
+            ./ release/controller/
+          tar -czf controller.tar.gz -C release controller
+
+      - name: Upload to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          source: controller.tar.gz
+          target: /tmp
+
+      - name: Extract and restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            set -e
+            mkdir -p "$HOME/controller"
+            tar -xzf /tmp/controller.tar.gz -C "$HOME"
+            cd "$HOME/controller"
+            python3 -m venv backend/.venv
+            backend/.venv/bin/pip install -r backend/requirements.txt
+            mkdir -p "$HOME/.config/systemd/user"
+            cp scripts/controller.service "$HOME/.config/systemd/user/controller.service"
+            systemctl --user daemon-reload
+            systemctl --user enable --now controller.service
+            systemctl --user restart controller.service
+            chmod o+x "$HOME" || true
+            rm -f /tmp/controller.tar.gz
