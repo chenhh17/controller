@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOMAIN="${1:-chenhh17.cloud-ip.cc}"
+DOMAIN="${1:-chenhh17.duckdns.org}"
 EMAIL="${2:-}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SITE_AVAIL="/etc/nginx/sites-available/controller.conf"
@@ -9,6 +9,7 @@ SITE_ENABLED="/etc/nginx/sites-enabled/controller.conf"
 STATE_DIR="/tmp/le-dns-${DOMAIN//\//_}"
 AUTH_HOOK="$STATE_DIR/auth.sh"
 CLEANUP_HOOK="$STATE_DIR/cleanup.sh"
+DUCK_DOMAIN="${DOMAIN%%.duckdns.org}"
 
 rm -rf "$STATE_DIR"
 mkdir -p "$STATE_DIR"
@@ -20,14 +21,15 @@ set -euo pipefail
 STATE_DIR="$STATE_DIR"
 printf '%s\\n' "\$CERTBOT_VALIDATION" >"\$STATE_DIR/validation"
 cat >"\$STATE_DIR/INSTRUCTIONS.txt" <<INSTR
-Add this TXT record in ClouDNS:
+Set the DuckDNS TXT for $DOMAIN:
 
-Host: _acme-challenge
-Type: TXT
-Value: \$CERTBOT_VALIDATION
-TTL: 1 minute (or 60)
+Option A — browser: https://www.duckdns.org (domain $DUCK_DOMAIN) → current txt → \$CERTBOT_VALIDATION → update
+
+Option B — API (replace YOUR_TOKEN):
+  curl "https://www.duckdns.org/update?domains=$DUCK_DOMAIN&token=YOUR_TOKEN&txt=\$CERTBOT_VALIDATION"
 
 Full name: _acme-challenge.$DOMAIN
+Value: \$CERTBOT_VALIDATION
 
 Then on the server run:
   touch \$STATE_DIR/ready

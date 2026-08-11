@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOMAIN="${1:-chenhh17.cloud-ip.cc}"
+DOMAIN="${1:-chenhh17.duckdns.org}"
 EMAIL="${2:-}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SITE_AVAIL="/etc/nginx/sites-available/controller.conf"

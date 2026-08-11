@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DOMAIN="${1:-chenhh17.cloud-ip.cc}"
+DOMAIN="${1:-chenhh17.duckdns.org}"
 SITE_AVAIL="/etc/nginx/sites-available/controller.conf"
 SITE_ENABLED="/etc/nginx/sites-enabled/controller.conf"
 
