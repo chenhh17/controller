@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 <domain> [email]"
-  echo "Example: $0 hub.example.com you@example.com"
-  exit 1
-fi
-
-DOMAIN="$1"
+DOMAIN="${1:-chenhh17.cloud-ip.cc}"
 EMAIL="${2:-}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SITE_AVAIL="/etc/nginx/sites-available/controller.conf"
@@ -38,14 +32,14 @@ fi
 sudo certbot "${CERTBOT_ARGS[@]}"
 
 if [[ ! -f /etc/letsencrypt/options-ssl-nginx.conf ]]; then
-  sudo curl -fsSL https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf \
+  sudo curl -fsSL https://raw.githubusercontent.com/certbot/certbot/v2.9.0/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf \
     -o /etc/letsencrypt/options-ssl-nginx.conf
 fi
 if [[ ! -f /etc/letsencrypt/ssl-dhparams.pem ]]; then
   sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
 fi
 
-sed "s/DOMAIN_NAME/${DOMAIN}/g" "$ROOT/nginx/chenhh17.github.io.conf" | sudo tee "$SITE_AVAIL" >/dev/null
+sed "s/DOMAIN_NAME/${DOMAIN}/g" "$ROOT/nginx/ssl.conf" | sudo tee "$SITE_AVAIL" >/dev/null
 sudo nginx -t
 sudo systemctl reload nginx
 
